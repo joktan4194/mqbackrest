@@ -1,0 +1,22 @@
+stanza: e2e
+repo:
+  type: s3
+  s3:
+    endpoint: s3:8333
+    bucket: mqbackrest
+    access_key: e2e
+    secret_key: e2e
+    use_ssl: false
+    path_style: true
+  cipher_pass: e2e-not-a-real-secret
+mysql:
+  host: ${MYSQL_HOST}
+  user: root
+  password: rootpw
+  datadir: /var/lib/mysql
+binlog:
+  spool_dir: /tmp/mqbackrest-spool
+  poll_interval: 2s
+part_size_mb: 4
+retention:
+  full: 1

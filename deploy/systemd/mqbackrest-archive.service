@@ -1,0 +1,14 @@
+[Unit]
+Description=mqBackRest binlog archiver
+After=network-online.target mysqld.service mysql.service
+Wants=network-online.target
+
+[Service]
+User=mysql
+EnvironmentFile=-/etc/mqbackrest/mqbackrest.env
+ExecStart=/usr/bin/mqbackrest archive-daemon --config /etc/mqbackrest/mqbackrest.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

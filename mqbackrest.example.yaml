@@ -1,0 +1,52 @@
+# mqBackRest example configuration. Copy to /etc/mqbackrest/mqbackrest.yaml.
+# ${VAR} references are expanded from the environment, so secrets can stay out of the file.
+
+stanza: main                # one stanza per MySQL cluster
+
+repo:
+  type: s3                  # s3 | local
+  # path: /mnt/backups      # for type: local (local disk, NFS, ...)
+  s3:
+    endpoint: s3.amazonaws.com   # or minio.internal:9000, <account>.r2.cloudflarestorage.com, storage.googleapis.com
+    bucket: my-mysql-backups
+    region: us-east-1
+    prefix: mqbackrest
+    access_key: ${AWS_ACCESS_KEY_ID}   # omit both keys to use the AWS credential chain / IAM role
+    secret_key: ${AWS_SECRET_ACCESS_KEY}
+    use_ssl: true
+    path_style: false
+  cipher_pass: ${MQBACKREST_CIPHER_PASS}  # AES-256-GCM; omit for no encryption. LOSE THIS = LOSE YOUR BACKUPS.
+
+mysql:
+  host: 127.0.0.1
+  port: 3306
+  # socket: /var/run/mysqld/mysqld.sock
+  user: mqbackrest
+  password: ${MQBACKREST_MYSQL_PASSWORD}
+  datadir: /var/lib/mysql
+
+xtrabackup:
+  bin: xtrabackup
+  xbstream_bin: xbstream
+  parallel: 4               # xtrabackup copy threads
+  extra_args: []            # e.g. ["--throttle=200"]
+  prepare_args: ["--use-memory=1G"]
+  restore_args: []
+
+binlog:
+  mysqlbinlog_bin: mysqlbinlog
+  mysql_bin: mysql
+  spool_dir: /var/lib/mqbackrest/spool
+  server_id: 4242           # must be unique among the server's replicas
+  poll_interval: 10s
+
+compress:
+  type: zstd                # zstd | none (fixed at stanza-create)
+  level: 3
+
+retention:
+  full: 2                   # keep 2 full backups and everything built on them
+
+process_max: 4              # parallel compress/encrypt/upload workers
+part_size_mb: 32            # memory use ~= (process_max + 1) * part_size_mb
+lock_dir: /var/lock

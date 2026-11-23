@@ -1,0 +1,10 @@
+[Unit]
+Description=mqBackRest %i backup
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=mysql
+EnvironmentFile=-/etc/mqbackrest/mqbackrest.env
+ExecStart=/usr/bin/mqbackrest backup --type %i --config /etc/mqbackrest/mqbackrest.yaml
+ExecStartPost=/usr/bin/mqbackrest expire --config /etc/mqbackrest/mqbackrest.yaml

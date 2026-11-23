@@ -1,0 +1,48 @@
+# End-to-end harness: real MySQL + XtraBackup + an S3-compatible store (SeaweedFS).  Run via ./run.sh
+name: mqbackrest-e2e
+services:
+  mysql:
+    image: mysql:8.0.35
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpw
+    command: ["--server-id=1", "--log-bin=binlog", "--binlog-format=ROW", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    volumes: ["mysql-data:/var/lib/mysql"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h127.0.0.1", "-uroot", "-prootpw"]
+      interval: 2s
+      retries: 60
+
+  s3:
+    image: chrislusf/seaweedfs:3.80
+    command: ["server", "-s3", "-dir=/data", "-ip=s3"]
+
+  tools:
+    image: percona/percona-xtrabackup:8.0.35
+    user: root
+    entrypoint: ["sleep", "infinity"]
+    environment:
+      MQBACKREST_CONFIG: /e2e/mqbackrest.yaml
+      MYSQL_HOST: mysql
+    volumes:
+      - "mysql-data:/var/lib/mysql"
+      - "restore-data:/restore"
+      - "../../dist/e2e:/opt/mqbackrest:ro"
+      - ".:/e2e:ro"
+    depends_on:
+      mysql: { condition: service_healthy }
+      s3: { condition: service_started }
+
+  # Started after `mqbackrest restore` to boot the restored datadir.
+  restored:
+    image: mysql:8.0.35
+    profiles: ["restored"]
+    command: ["--datadir=/restore/data", "--server-id=2", "--log-bin=binlog", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    volumes: ["restore-data:/restore"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h127.0.0.1", "-uroot", "-prootpw"]
+      interval: 2s
+      retries: 60
+
+volumes:
+  mysql-data:
+  restore-data:

@@ -1,0 +1,33 @@
+version: 2
+project_name: mqbackrest
+builds:
+  - main: ./cmd/mqbackrest
+    env: [CGO_ENABLED=0]
+    goos: [linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w
+      - -X github.com/joktan4194/mqbackrest/internal/version.Version={{.Version}}
+      - -X github.com/joktan4194/mqbackrest/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/joktan4194/mqbackrest/internal/version.Date={{.Date}}
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    files: [LICENSE, README.md, mqbackrest.example.yaml, deploy/systemd/*]
+checksum:
+  name_template: checksums.txt
+nfpms:
+  - package_name: mqbackrest
+    description: Reliable, parallel backup and point-in-time recovery for MySQL (full and incremental physical backups, continuous binlog archiving, encryption, S3)
+    license: MIT
+    formats: [deb, rpm]
+    contents:
+      - src: mqbackrest.example.yaml
+        dst: /etc/mqbackrest/mqbackrest.example.yaml
+      - src: deploy/systemd/mqbackrest-archive.service
+        dst: /lib/systemd/system/mqbackrest-archive.service
+      - src: deploy/systemd/mqbackrest-backup@.service
+        dst: /lib/systemd/system/mqbackrest-backup@.service
+      - src: deploy/systemd/mqbackrest-backup-full.timer
+        dst: /lib/systemd/system/mqbackrest-backup-full.timer
+      - src: deploy/systemd/mqbackrest-backup-incr.timer
+        dst: /lib/systemd/system/mqbackrest-backup-incr.timer

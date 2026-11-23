@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily incremental mqBackRest backup
+
+[Timer]
+OnCalendar=Mon..Sat 01:00
+Persistent=true
+Unit=mqbackrest-backup@incr.service
+
+[Install]
+WantedBy=timers.target

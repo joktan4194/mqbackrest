@@ -1,0 +1,10 @@
+[Unit]
+Description=Weekly full mqBackRest backup
+
+[Timer]
+OnCalendar=Sun 01:00
+Persistent=true
+Unit=mqbackrest-backup@full.service
+
+[Install]
+WantedBy=timers.target
